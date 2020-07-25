@@ -38,12 +38,9 @@ module.exports = {
     const sentryEnvironment = process.env.SENTRY_ENVIRONMENT || process.env.CONTEXT
     const sourceMapPath = inputs.sourceMapPath || PUBLISH_DIR
     const sourceMapUrlPrefix = inputs.sourceMapUrlPrefix || DEFAULT_SOURCE_MAP_URL_PREFIX
-    const skipSetCommits = inputs.skipSetCommits || false
-    const skipSourceMaps = inputs.skipSourceMaps || false
-    const deployPreviews = inputs.deployPreviews || true
 
     if (RUNNING_IN_NETLIFY) {
-      if (IS_PREVIEW && !deployPreviews) {
+      if (IS_PREVIEW && !inputs.deployPreviews) {
         console.log("here")
         return
       }
@@ -68,8 +65,6 @@ module.exports = {
         sentryEnvironment,
         sourceMapPath,
         sourceMapUrlPrefix,
-        skipSetCommits,
-        skipSourceMaps
       })
 
       console.log()
@@ -81,7 +76,7 @@ module.exports = {
   }
 }
 
-async function createSentryRelease({ pluginApi, release, sentryEnvironment, sourceMapPath, sourceMapUrlPrefix, skipSetCommits, skipSourceMaps }) {
+async function createSentryRelease({ pluginApi, release, sentryEnvironment, sourceMapPath, sourceMapUrlPrefix }) {
   // default config file is read from ~/.sentryclirc
   const { constants, inputs, utils } = pluginApi
   const cli = new SentryCli()
@@ -92,7 +87,7 @@ async function createSentryRelease({ pluginApi, release, sentryEnvironment, sour
   await cli.releases.new(release)
 
   // https://docs.sentry.io/cli/releases/#managing-release-artifacts
-  if (!skipSourceMaps) {
+  if (!inputs.skipSourceMaps) {
     await cli.releases.uploadSourceMaps(release, {
       debug: false,
       include: [sourceMapPath],
@@ -103,7 +98,7 @@ async function createSentryRelease({ pluginApi, release, sentryEnvironment, sour
   }
 
   // https://docs.sentry.io/cli/releases/#sentry-cli-commit-integration
-  if (!skipSetCommits) {
+  if (!inputs.skipSetCommits) {
     const repository = process.env.REPOSITORY_URL.split(/[:/]/).slice(-2).join('/')
     try {
       await cli.releases.setCommits(release, {
