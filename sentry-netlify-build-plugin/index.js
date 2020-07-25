@@ -9,6 +9,7 @@ const fs = require('fs')
 const path = require('path')
 const SentryCli = require('@sentry/cli')
 const { promisify, inspect } = require('util')
+const { version } = require('./package.json');
 
 const writeFile = promisify(fs.writeFile)
 const deleteFile = promisify(fs.unlink)
@@ -18,24 +19,12 @@ const SENTRY_CONFIG_PATH = path.resolve(CWD, '.sentryclirc')
 const DEFAULT_SOURCE_MAP_URL_PREFIX = "~/"
 
 module.exports = {
-  onPreBuild: async (pluginApi) => {
-    const { constants, inputs, utils } = pluginApi
-    const sentryRelease = process.env.SENTRY_RELEASE || inputs.sentryRelease || process.env.COMMIT_REF
-    const releasePrefix = process.env.SENTRY_RELEASE_PREFIX || inputs.releasePrefix || ''
-    const release = `${releasePrefix}${sentryRelease}`
-    process.env['SENTRY_RELEASE'] = release
-  },
   onPostBuild: async (pluginApi) => {
     const { constants, inputs, utils } = pluginApi
     const { PUBLISH_DIR, IS_LOCAL } = constants
 
-    // Uncomment this block to see all the values pluginApi has
-    console.log('---------------------------------------------------')
-    console.log('Netlify Build Plugin API values')
-    console.log(inspect(pluginApi, { showHidden: false, depth: null }))
-    console.log('---------------------------------------------------')
-
     const RUNNING_IN_NETLIFY = !IS_LOCAL
+    const IS_PREVIEW = process.env.CONTEXT == 'deploy-preview'
 
     /* Set the user input settings */
     const sentryOrg = process.env.SENTRY_ORG || inputs.sentryOrg
@@ -46,10 +35,13 @@ module.exports = {
     const sentryEnvironment = process.env.SENTRY_ENVIRONMENT || process.env.CONTEXT
     const sourceMapPath = inputs.sourceMapPath || PUBLISH_DIR
     const sourceMapUrlPrefix = inputs.sourceMapUrlPrefix || DEFAULT_SOURCE_MAP_URL_PREFIX
-    const skipSetCommits = inputs.skipSetCommits || false
-    const skipSourceMaps = inputs.skipSourceMaps || false
 
     if (RUNNING_IN_NETLIFY) {
+      if (IS_PREVIEW && !inputs.deployPreviews) {
+        console.log('Skipping Sentry release creation - Deploy Preview')
+        return
+      }
+
       if (!sentryAuthToken) {
         return utils.build.failBuild('SentryCLI needs an authentication token. Please set env variable SENTRY_AUTH_TOKEN')
       } else if (!sentryOrg) {
@@ -69,9 +61,7 @@ module.exports = {
         release,
         sentryEnvironment,
         sourceMapPath,
-        sourceMapUrlPrefix,
-        skipSetCommits,
-        skipSourceMaps
+        sourceMapUrlPrefix
       })
 
       console.log()
@@ -83,7 +73,7 @@ module.exports = {
   }
 }
 
-async function createSentryRelease({ pluginApi, release, sentryEnvironment, sourceMapPath, sourceMapUrlPrefix, skipSetCommits, skipSourceMaps }) {
+async function createSentryRelease({ pluginApi, release, sentryEnvironment, sourceMapPath, sourceMapUrlPrefix }) {
   // default config file is read from ~/.sentryclirc
   const { constants, inputs, utils } = pluginApi
   const cli = new SentryCli()
@@ -94,7 +84,7 @@ async function createSentryRelease({ pluginApi, release, sentryEnvironment, sour
   await cli.releases.new(release)
 
   // https://docs.sentry.io/cli/releases/#managing-release-artifacts
-  if (!skipSourceMaps) {
+  if (!inputs.skipSourceMaps) {
     await cli.releases.uploadSourceMaps(release, {
       debug: false,
       include: [sourceMapPath],
@@ -105,7 +95,7 @@ async function createSentryRelease({ pluginApi, release, sentryEnvironment, sour
   }
 
   // https://docs.sentry.io/cli/releases/#sentry-cli-commit-integration
-  if (!skipSetCommits) {
+  if (!inputs.skipSetCommits) {
     const repository = process.env.REPOSITORY_URL.split(/[:/]/).slice(-2).join('/')
     try {
       await cli.releases.setCommits(release, {
@@ -134,6 +124,7 @@ async function createSentryConfig({ sentryOrg, sentryProject, sentryAuthToken })
   [defaults]
   project=${sentryProject}
   org=${sentryOrg}
+  pipeline=netlify-build-plugin/${version}
   `
   await writeFile(SENTRY_CONFIG_PATH, sentryConfigFile, { flag: 'w+' })
 }

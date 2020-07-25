@@ -34,7 +34,7 @@ Note: The `[[plugins]]` line is required for each plugin installed via file-base
 ### Create a Sentry Internal Integration
 For Netlify to communicate securely with Sentry, you'll need to create a new internal integration. In Sentry, navigate to: *Settings > Developer Settings > New Internal Integration*.
 
-Give your new integration a name (for example, Netlify Deploy Integration”) and specify the necessary permissions. In this case, we need Admin access for “Release” and Read access for “Organization”.
+Give your new integration a name (for example, “Netlify Deploy Integration”) and specify the necessary permissions. In this case, we need Admin access for “Release” and Read access for “Organization”.
 
 ![View of internal integration permissions.](images/internal-integration-permissions.png)
 
@@ -46,6 +46,7 @@ Save the internal integration token and any other environment variables as [site
 1. In Netlify, go to your site's settings.
 2. Click on "Build & deploy".
 3. Click “Edit variables” and add `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` with their respective values. For more configuration options see the [environment variables](#environment-variables) section below.
+4. Click "Save".
 
 ![View of internal integration permissions.](images/netlify-environment-variables.png)
 
@@ -79,3 +80,4 @@ You can use [site environment variables](https://docs.netlify.com/configure-buil
 | `skipSetCommits` | Set this to true if you want to disable commit tracking. | `false` |
 | `skipSourceMaps` | Set this to true if you want to disable sending source maps to Sentry. | `false` |
 | `releasePrefix` | Set this to prefix the release name with the value. | - |
+| `deployPreviews` | Set this to false if you want to skip running the build plugin on deploy previews. | `true` |
