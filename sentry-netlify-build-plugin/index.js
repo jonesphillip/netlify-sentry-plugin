@@ -25,9 +25,6 @@ module.exports = {
 
     const RUNNING_IN_NETLIFY = !IS_LOCAL
     const IS_PREVIEW = process.env.CONTEXT == 'deploy-preview'
-    console.log("process.env.CONTEXT")
-    console.log(process.env.CONTEXT )
-    console.log(IS_PREVIEW)
 
     /* Set the user input settings */
     const sentryOrg = process.env.SENTRY_ORG || inputs.sentryOrg
@@ -41,7 +38,6 @@ module.exports = {
 
     if (RUNNING_IN_NETLIFY) {
       if (IS_PREVIEW && !inputs.deployPreviews) {
-        console.log("here")
         return
       }
 
@@ -64,7 +60,7 @@ module.exports = {
         release,
         sentryEnvironment,
         sourceMapPath,
-        sourceMapUrlPrefix,
+        sourceMapUrlPrefix
       })
 
       console.log()
