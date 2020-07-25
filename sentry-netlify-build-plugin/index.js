@@ -38,6 +38,7 @@ module.exports = {
 
     if (RUNNING_IN_NETLIFY) {
       if (IS_PREVIEW && !inputs.deployPreviews) {
+        console.log('Skipping Sentry release creation - Deploy Preview')
         return
       }
 
