@@ -16,4 +16,5 @@
 
   [plugins.inputs]
     sentryProject = "netlify-test-app"
-  #   sentryOrg = "test-organization-q3"
+    deployPreviews = false
+    sentryOrg = "test-organization-q3"

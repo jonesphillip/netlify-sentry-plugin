@@ -80,8 +80,14 @@ async function createSentryRelease({ pluginApi, release, sentryEnvironment, sour
 
   console.log('Creating new release with version: ', release)
 
-  // https://docs.sentry.io/cli/releases/#creating-releases
-  await cli.releases.new(release)
+  try {
+    // https://docs.sentry.io/cli/releases/#creating-releases
+    await cli.releases.new(release)
+  } catch (error) {
+    console.log(error)
+    return utils.build.failBuild("")
+  }
+  
 
   // https://docs.sentry.io/cli/releases/#managing-release-artifacts
   if (!inputs.skipSourceMaps) {
