@@ -85,8 +85,9 @@ async function createSentryRelease({ pluginApi, release, sentryEnvironment, sour
     await cli.releases.new(release)
   } catch (error) {
     console.log(error)
-    console.log(Object.keys(error))
-    console.log(JSON.stringify(error))
+    console.log("===")
+    console.log(error.message)
+    console.log("===")
     return utils.build.failBuild("")
   }
   
