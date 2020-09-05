@@ -84,11 +84,11 @@ async function createSentryRelease({ pluginApi, release, sentryEnvironment, sour
     // https://docs.sentry.io/cli/releases/#creating-releases
     await cli.releases.new(release)
   } catch (error) {
-    console.log(error)
-    console.log("===")
+    if (error.message.includes("401")) {
+      return utils.build.failBuild("SentryCLI failed to create a new release. Invalid Sentry authentication token.")
+    }
     console.log(error.message)
-    console.log("===")
-    return utils.build.failBuild("")
+    return utils.build.failBuild("SentryCLI failed to create a new release.")
   }
   
 
